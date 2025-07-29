@@ -60,37 +60,40 @@ class Server < Sinatra::Base
           halt 500, "Command not configured"
         end
         
-        output_lines = []
         IO.popen(command + " 2>&1") do |output|
           output.each do |line|
-            cleaned_line = line.strip.chomp
-            LOG.info("Command output: #{cleaned_line}")
-            output_lines << cleaned_line
+            LOG.info("Command output: #{line.strip.chomp}")
           end
         end
         
         exit_status = $?.exitstatus
         LOG.info("Command completed with exit status: #{exit_status}")
         
-        response_body = {
-          command: command,
-          exit_status: exit_status,
-          output: output_lines
-        }.to_json
-        
-        content_type :json
-        if exit_status == 0
+        case exit_status
+        when 0  # No changes, system already in desired state
           status 200
-          response_body
-        else
+          "Puppet run succeeded - no changes needed"
+        when 2  # Changes made successfully  
+          status 200
+          "Puppet run succeeded - changes applied"
+        when 4  # Some resources failed but run completed
+          status 207  # Multi-status (partial success)
+          "Puppet run completed with some failures"
+        when 6  # Both changes and failures
+          status 207  # Multi-status (partial success) 
+          "Puppet run completed with changes and failures"
+        when 1  # Run failed or couldn't start
           status 500
-          response_body
+          "Puppet run failed"
+        else    # Unexpected exit code
+          status 500
+          "Puppet run failed with unexpected exit code: #{exit_status}"
         end
         
       rescue => e
         LOG.error("Error executing command: #{e.message}")
         LOG.error(e.backtrace.join("\n"))
-        halt 500, { error: e.message }.to_json
+        halt 500, "Internal server error"
       end
     end
   <% end %>
