@@ -1,20 +1,25 @@
+# Ruby 3 compatibility: Requires the following gems to be installed:
+# gem install sinatra webrick rack
 require 'rubygems'
 require 'rack'
-require 'sinatra'
+require 'sinatra/base'
 require 'webrick'
 require 'logger'
+<% if @ssl_enable %>
+require 'openssl'
+<% end %>
 
 # Global vars
-LOGDIR		    = File.expand_path(File.dirname(__FILE__)) + '/../logs'
+LOGDIR          = File.expand_path(File.dirname(__FILE__)) + '/../logs'
 SERVER_LOGFILE  = LOGDIR + '/server.log'
-SESSION_LOG	    = LOGDIR + '/session.log'
+SESSION_LOG     = LOGDIR + '/session.log'
 
 # Reset some envs
 ENV['HOME']     = '/root'
 ENV['PATH']     = '/sbin:/usr/sbin:/bin:/usr/bin:/opt/puppet/bin'
 ENV['RACK_ENV'] = '<%= @rack_env %>'
 
-# Implement an access log for robust logging of user info and access and git output 
+# Implement an access log for robust logging of user info and access and git output
 LOG = Logger.new(SESSION_LOG)
 LOG.info("Setting session log at #{SESSION_LOG}")
 LOG.info("Setting server log at #{SERVER_LOGFILE}")
@@ -23,13 +28,13 @@ LOG.info("Setting server log at #{SERVER_LOGFILE}")
 opts = {
      :Port               => <%= @port %>,
      :Logger             => WEBrick::Log::new(SERVER_LOGFILE, WEBrick::Log::DEBUG),
-     :ServerType         => WEBrick::Daemon,
+     :AccessLog          => [[File.open(SERVER_LOGFILE, 'a'), WEBrick::AccessLog::COMMON_LOG_FORMAT]],
      :SSLEnable          => <%= @ssl_enable %>,
 <% if @ssl_enable %>
      :SSLCertificate     => OpenSSL::X509::Certificate.new(File.open('<%= @cert_path %>').read),
      :SSLPrivateKey      => OpenSSL::PKey::RSA.new(File.open('<%= @key_path %>').read),
-	 :SSLCertName        => [ [ "CN",WEBrick::Utils::getservername ] ]
- <% end %>
+     :SSLCertName        => [ [ "CN",WEBrick::Utils::getservername ] ]
+<% end %>
 }
 
 class Server < Sinatra::Base
@@ -42,12 +47,12 @@ class Server < Sinatra::Base
     end
    <% end %>
 
-	not_found do
-		halt 404, 'You shall not pass! (page not found)'
-	end
+    not_found do
+        halt 404, 'You shall not pass! (page not found)'
+    end
 end
 
 Rack::Handler::WEBrick.run(Server, opts) do |server|
-	[:INT, :TERM].each { |sig| trap(sig) { server.stop } }
+    [:INT, :TERM].each { |sig| trap(sig) { server.stop } }
 end
 
