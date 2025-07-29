@@ -4,6 +4,7 @@ require 'rubygems'
 require 'sinatra/base'
 require 'webrick'
 require 'logger'
+require 'json'
 <% if @ssl_enable %>
 require 'openssl'
 <% end %>
@@ -50,9 +51,47 @@ class Server < Sinatra::Base
   # Route definitions
   <% @routes.each do |route,param| %>
     <%= param['method'] %> '/<%= route %>' do
-        IO.popen("<%= param['command'] %>") do |output|
-            output.each do |line| LOG.info(line.strip.chomp) end
+      begin
+        LOG.info("Executing command: <%= param['command'] %>")
+        command = "<%= param['command'] %>"
+        
+        if command.nil? || command.empty?
+          LOG.error("Command is nil or empty for route <%= route %>")
+          halt 500, "Command not configured"
         end
+        
+        output_lines = []
+        IO.popen(command + " 2>&1") do |output|
+          output.each do |line|
+            cleaned_line = line.strip.chomp
+            LOG.info("Command output: #{cleaned_line}")
+            output_lines << cleaned_line
+          end
+        end
+        
+        exit_status = $?.exitstatus
+        LOG.info("Command completed with exit status: #{exit_status}")
+        
+        response_body = {
+          command: command,
+          exit_status: exit_status,
+          output: output_lines
+        }.to_json
+        
+        content_type :json
+        if exit_status == 0
+          status 200
+          response_body
+        else
+          status 500
+          response_body
+        end
+        
+      rescue => e
+        LOG.error("Error executing command: #{e.message}")
+        LOG.error(e.backtrace.join("\n"))
+        halt 500, { error: e.message }.to_json
+      end
     end
   <% end %>
 

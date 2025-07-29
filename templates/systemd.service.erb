@@ -14,11 +14,10 @@ KillMode=process
 Restart=on-failure
 RestartSec=42s
 
-# Security settings
-NoNewPrivileges=true
+# Security settings - Relaxed for puppet execution
+NoNewPrivileges=false
 PrivateTmp=true
-ProtectSystem=strict
-ReadWritePaths=/usr/local/bin/webhook_<%= @name %>/logs
+ProtectSystem=false
 ProtectHome=true
 
 [Install]
