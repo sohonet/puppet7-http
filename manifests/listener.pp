@@ -1,19 +1,15 @@
 define http::listener (
-    Hash $routes = {},
-    Boolean $ssl_enable = false,
-    Optional[Stdlib::Port] $port = undef,
-    Optional[Stdlib::Absolutepath] $cert_path = undef,
-    Optional[Stdlib::Absolutepath] $key_path = undef,
+    Hash $routes                                        = {},
+    Boolean $ssl_enable                                 = false,
+    [Stdlib::Port] $port                                = undef,
+    Optional[Stdlib::Absolutepath] $cert_path           = undef,
+    Optional[Stdlib::Absolutepath] $key_path            = undef,
     Enum['development', 'production', 'test'] $rack_env = 'production',
-    Stdlib::IP::Address $bind_address = '0.0.0.0',
+    Stdlib::IP::Address $bind_address                   = '0.0.0.0',
 ) {
     # Parameter validation
     if $ssl_enable and ($cert_path == undef or $key_path == undef) {
         fail('SSL enabled but cert_path or key_path not provided')
-    }
-    
-    if $port == undef {
-        fail('Port parameter is required')
     }
 
     File {
