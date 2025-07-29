@@ -1,8 +1,6 @@
 # Ruby 3 compatibility: Requires the following gems to be installed:
 # gem install sinatra webrick rack
 require 'rubygems'
-require 'rack'
-require 'rack/handler/webrick'
 require 'sinatra/base'
 require 'webrick'
 require 'logger'
@@ -25,44 +23,52 @@ LOG = Logger.new(SESSION_LOG)
 LOG.info("Setting session log at #{SESSION_LOG}")
 LOG.info("Setting server log at #{SERVER_LOGFILE}")
 
-# Server options
-opts = {
-     :Port               => <%= @port %>,
-     :Logger             => WEBrick::Log::new(SERVER_LOGFILE, WEBrick::Log::DEBUG),
-     :AccessLog          => [[File.open(SERVER_LOGFILE, 'a'), WEBrick::AccessLog::COMMON_LOG_FORMAT]],
-     :SSLEnable          => <%= @ssl_enable %>,
-<% if @ssl_enable %>
-     :SSLCertificate     => OpenSSL::X509::Certificate.new(File.open('<%= @cert_path %>').read),
-     :SSLPrivateKey      => OpenSSL::PKey::RSA.new(File.open('<%= @key_path %>').read),
-     :SSLCertName        => [ [ "CN",WEBrick::Utils::getservername ] ]
-<% end %>
-}
-
+# Configure Sinatra settings
 class Server < Sinatra::Base
+  configure do
+    set :port, <%= @port %>
+    set :bind, '<%= @bind_address %>'
+    set :server, 'webrick'
+    set :logging, true
+    set :environment, :<%= @rack_env %>
+    
+    # WEBrick specific options
+    set :server_settings, {
+      :Logger => WEBrick::Log::new(SERVER_LOGFILE, WEBrick::Log::DEBUG),
+      :AccessLog => [[File.open(SERVER_LOGFILE, 'a'), WEBrick::AccessLog::COMMON_LOG_FORMAT]],
+<% if @ssl_enable %>
+      :SSLEnable => true,
+      :SSLCertificate => OpenSSL::X509::Certificate.new(File.open('<%= @cert_path %>').read),
+      :SSLPrivateKey => OpenSSL::PKey::RSA.new(File.open('<%= @key_path %>').read),
+      :SSLCertName => [ [ "CN", WEBrick::Utils::getservername ] ]
+<% else %>
+      :SSLEnable => false
+<% end %>
+    }
+  end
 
-    <% @routes.each do |route,param| %>
+  # Route definitions
+  <% @routes.each do |route,param| %>
     <%= param['method'] %> '/<%= route %>' do
         IO.popen("<%= param['command'] %>") do |output|
             output.each do |line| LOG.info(line.strip.chomp) end
         end
     end
-   <% end %>
+  <% end %>
 
-    not_found do
-        halt 404, 'You shall not pass! (page not found)'
-    end
-end
-
-# Start the server with proper signal handling
-begin
-  Rack::Handler::WEBrick.run(Server, opts) do |server|
-    [:INT, :TERM].each { |sig| trap(sig) { server.stop } }
-  end
-rescue LoadError
-  # Fallback for older Rack versions
-  require 'rack/handler'
-  Rack::Handler::WEBrick.run(Server, opts) do |server|
-    [:INT, :TERM].each { |sig| trap(sig) { server.stop } }
+  not_found do
+    halt 404, 'You shall not pass! (page not found)'
   end
 end
+
+# Setup signal handling
+[:INT, :TERM].each do |sig|
+  trap(sig) do
+    puts "Received #{sig}, shutting down..."
+    exit
+  end
+end
+
+# Start the server
+Server.run!
 
