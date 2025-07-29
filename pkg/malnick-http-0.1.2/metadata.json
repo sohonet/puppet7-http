@@ -1,12 +1,12 @@
 {
-  "name": "malnick-http",
+  "name": "puppet7-http",
   "version": "0.1.2",
-  "author": "Jeff Malnick",
-  "summary": "This module uses wiccian magic to POST and GET shit from the interwebs",
+  "author": "Jeff Malnick, Ben Levin",
+  "summary": "Module for creating arbitrary webhooks.",
   "license": "Apache-2.0",
-  "source": "https://github.com/malnick/puppet-http",
-  "project_page": "https://github.com/malnick/puppet-http",
-  "issues_url": "https://github.com/malnick/puppet-http/issues",
+  "source": "https://github.com/sohonet/puppet7-http",
+  "project_page": "https://github.com/sohonet/puppet7-http",
+  "issues_url": "https://github.com/sohonet/puppet7-http/issues",
   "requirements": [
     {
       "name": "pe",
