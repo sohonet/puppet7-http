@@ -2,6 +2,7 @@
 # gem install sinatra webrick rack
 require 'rubygems'
 require 'rack'
+require 'rack/handler/webrick'
 require 'sinatra/base'
 require 'webrick'
 require 'logger'
@@ -52,7 +53,16 @@ class Server < Sinatra::Base
     end
 end
 
-Rack::Handler::WEBrick.run(Server, opts) do |server|
+# Start the server with proper signal handling
+begin
+  Rack::Handler::WEBrick.run(Server, opts) do |server|
     [:INT, :TERM].each { |sig| trap(sig) { server.stop } }
+  end
+rescue LoadError
+  # Fallback for older Rack versions
+  require 'rack/handler'
+  Rack::Handler::WEBrick.run(Server, opts) do |server|
+    [:INT, :TERM].each { |sig| trap(sig) { server.stop } }
+  end
 end
 
