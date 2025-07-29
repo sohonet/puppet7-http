@@ -1,0 +1,25 @@
+[Unit]
+Description=HTTP Webhook Listener for <%= @name %>
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/usr/local/bin/webhook_<%= @name %>
+ExecStart=/usr/local/bin/webhook_<%= @name %>/bin/run
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure
+RestartSec=42s
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/usr/local/bin/webhook_<%= @name %>/logs
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

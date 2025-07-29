@@ -1,17 +1,23 @@
 define http::listener (
-
-    $routes             = {},
-    $ssl_enable         = false,
-    $port               = undef,
-    $cert_path          = undef, 
-    $key_path           = undef,
-    $rack_env           = 'production',
-    $bind_address       = '0.0.0.0',
-
+    Hash $routes = {},
+    Boolean $ssl_enable = false,
+    Optional[Stdlib::Port] $port = undef,
+    Optional[Stdlib::Absolutepath] $cert_path = undef,
+    Optional[Stdlib::Absolutepath] $key_path = undef,
+    Enum['development', 'production', 'test'] $rack_env = 'production',
+    Stdlib::IP::Address $bind_address = '0.0.0.0',
 ) {
+    # Parameter validation
+    if $ssl_enable and ($cert_path == undef or $key_path == undef) {
+        fail('SSL enabled but cert_path or key_path not provided')
+    }
+    
+    if $port == undef {
+        fail('Port parameter is required')
+    }
 
     File {
-        mode  => '0755',
+        mode  => '0750',
         group => 'root',
         owner => 'root',
     }
@@ -28,6 +34,7 @@ define http::listener (
         path    => "/usr/local/bin/webhook_${name}/lib/webhook_${name}.rb",
         ensure  => file,
         content => template('http/simple_webhook.rb.erb'),
+        mode    => '0640',
         notify  => Service["webhook_${name}"],
     }
 
@@ -44,10 +51,8 @@ define http::listener (
         content => template('http/run.erb'),
     }
 
-    file { "/etc/init.d/webhook_${name}":
-      ensure  => file,
-      content => template('http/init.erb'),
-      mode    => '0755',
+    systemd::unit_file { "webhook_${name}.service":
+      content => template('http/systemd.service.erb'),
       notify  => Service["webhook_${name}"],
     }
 

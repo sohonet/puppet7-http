@@ -1,46 +1,43 @@
 {
-  "name": "malnick-http",
-  "version": "0.1.3",
-  "author": "Jeff Malnick",
-  "summary": "This module uses wiccian magic to POST and GET shit from the interwebs",
+  "name": "sohonet-http",
+  "version": "0.2.0",
+  "author": "Jeff Malnick, Sohonet",
+  "summary": "HTTP webhook listener module with Ruby 3 support",
   "license": "Apache-2.0",
-  "source": "https://github.com/malnick/puppet-http",
-  "project_page": "https://github.com/malnick/puppet-http",
-  "issues_url": "https://github.com/malnick/puppet-http/issues",
+  "source": "https://github.com/sohonet/puppet7-http",
+  "project_page": "https://github.com/sohonet/puppet7-http",
+  "issues_url": "https://github.com/sohonet/puppet7-http/issues",
   "requirements": [
     {
-      "name": "pe",
-      "version_requirement": ">3.2.0 <4.0.0"
-    },
-    {
       "name": "puppet",
-      "version_requirement": ">3.0.0 <4.0.0"
+      "version_requirement": ">= 7.0.0 < 9.0.0"
     }
   ],
   "dependencies": [
     {
-      "name": "puppetlabs/pe_gem",
-      "version_requirement": ">= 0.1.0 <1.0.0"
+      "name": "puppetlabs/stdlib",
+      "version_requirement": ">= 8.0.0 < 10.0.0"
     },
     {
-      "name": "puppetlabs/stdlib",
-      "version_requirement": ">= 4.5.0 <6.0.0"
+      "name": "puppet/systemd", 
+      "version_requirement": ">= 8.0.0 < 9.0.0"
     }
   ],
   "operatingsystem_support": [
     {
-      "operatingsystem": "Debian",
+      "operatingsystem": "Ubuntu",
       "operatingsystemrelease": [
-        "6",
-        "7"
+        "20.04",
+        "22.04",
+        "24.04"
       ]
     },
     {
-      "operatingsystem": "RedHat",
+      "operatingsystem": "Debian",
       "operatingsystemrelease": [
-        "5",
-        "6",
-        "7"
+        "10",
+        "11",
+        "12"
       ]
     }
   ]
