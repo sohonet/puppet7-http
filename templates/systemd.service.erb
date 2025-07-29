@@ -14,11 +14,7 @@ KillMode=process
 Restart=on-failure
 RestartSec=42s
 
-# Security settings - Relaxed for puppet execution
-NoNewPrivileges=false
-PrivateTmp=true
-ProtectSystem=false
-ProtectHome=true
+# Note: Security restrictions removed to allow puppet full system access
 
 [Install]
 WantedBy=multi-user.target
