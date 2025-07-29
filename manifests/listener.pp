@@ -1,7 +1,7 @@
 define http::listener (
     Hash $routes                                        = {},
     Boolean $ssl_enable                                 = false,
-    [Stdlib::Port] $port                                = undef,
+    Stdlib::Port $port                                = undef,
     Optional[Stdlib::Absolutepath] $cert_path           = undef,
     Optional[Stdlib::Absolutepath] $key_path            = undef,
     Enum['development', 'production', 'test'] $rack_env = 'production',
