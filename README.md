@@ -138,6 +138,29 @@ The custom handler receives the `exit_status` variable and should set HTTP statu
 | `bind_address` | Stdlib::IP::Address | `'0.0.0.0'` | Address to bind to |
 | `custom_response_handler` | Optional[String] | `undef` | Custom Ruby code for handling command exit codes |
 
+#### Systemd Security Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `systemd_user` | Optional[String] | `undef` | User to run service as |
+| `systemd_group` | Optional[String] | `undef` | Group to run service as |
+| `systemd_protect_system` | Optional[Variant[Boolean, Enum['full', 'strict']]] | `undef` | Make file system read-only |
+| `systemd_protect_home` | Optional[Boolean] | `undef` | Make /home, /root, /run/user inaccessible |
+| `systemd_private_tmp` | Optional[Boolean] | `undef` | Use private /tmp and /var/tmp |
+| `systemd_no_new_privileges` | Optional[Boolean] | `undef` | Prevent gaining new privileges |
+| `systemd_read_write_paths` | Optional[Array] | `undef` | Paths that should be writable |
+| `systemd_read_only_paths` | Optional[Array] | `undef` | Paths that should be read-only |
+| `systemd_inaccessible_paths` | Optional[Array] | `undef` | Paths that should be inaccessible |
+| `systemd_dynamic_user` | Optional[String] | `undef` | Allocate dynamic user/group |
+| `systemd_capability_bounding_set` | Optional[Array] | `undef` | Limit capabilities |
+| `systemd_private_devices` | Optional[Enum] | `undef` | Make devices inaccessible |
+| `systemd_restrict_address_families` | Optional[Boolean] | `undef` | Restrict to IPv4/IPv6/Unix |
+| `systemd_restrict_namespaces` | Optional[Boolean] | `undef` | Restrict namespace access |
+| `systemd_lock_personality` | Optional[Boolean] | `undef` | Lock personality(2) |
+| `systemd_protect_kernel_tunables` | Optional[Enum] | `undef` | Protect kernel tunables |
+| `systemd_protect_kernel_modules` | Optional[Boolean] | `undef` | Prevent kernel module loading |
+| `systemd_protect_control_groups` | Optional[Boolean] | `undef` | Protect control group hierarchies |
+
 ### Route Definition
 
 Each route in the `routes` hash must contain:
@@ -205,6 +228,68 @@ For production deployments, always enable SSL:
 - Validate command inputs if processing user data
 - Run webhook service with minimal required privileges
 - Use systemd security features where appropriate
+
+### Systemd Security Examples
+
+For webhooks that don't need full system access, enable security restrictions:
+
+#### Basic Security (Recommended for most webhooks)
+```puppet
+http::listener { 'app-webhook':
+  port                          => 8080,
+  systemd_user                  => 'webhook',
+  systemd_group                 => 'webhook',
+  systemd_protect_system        => true,
+  systemd_protect_home          => true,
+  systemd_private_tmp           => true,
+  systemd_no_new_privileges     => true,
+  systemd_read_write_paths      => ['/var/lib/myapp', '/var/log/myapp'],
+  routes                        => {
+    'deploy' => {
+      'method'  => 'post',
+      'command' => '/usr/local/bin/deploy.sh'
+    }
+  }
+}
+```
+
+#### Strict Security (For read-only operations)
+```puppet
+http::listener { 'status-webhook':
+  port                          => 8081,
+  systemd_dynamic_user          => true,
+  systemd_protect_system        => 'strict',
+  systemd_protect_home          => true,
+  systemd_private_tmp           => true,
+  systemd_private_devices       => 'yes',
+  systemd_no_new_privileges     => true,
+  systemd_protect_kernel_modules => true,
+  systemd_protect_kernel_tunables => 'yes',
+  systemd_restrict_namespaces   => true,
+  systemd_lock_personality      => true,
+  systemd_restrict_address_families => true,
+  routes                        => {
+    'status' => {
+      'method'  => 'get',
+      'command' => '/usr/local/bin/check-status.sh'
+    }
+  }
+}
+```
+
+#### No Security (Required for system management tasks like Puppet)
+```puppet
+http::listener { 'puppet-webhook':
+  port                          => 6969,
+  # No security restrictions - needed for puppet agent
+  routes                        => {
+    'run_puppet' => {
+      'method'  => 'get',
+      'command' => '/opt/puppetlabs/bin/puppet agent -t'
+    }
+  }
+}
+```
 
 ## Architecture
 

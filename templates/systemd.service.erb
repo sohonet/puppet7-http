@@ -14,7 +14,65 @@ KillMode=process
 Restart=on-failure
 RestartSec=42s
 
-# Note: Security restrictions removed to allow puppet full system access
+<% if @systemd_user -%>
+User=<%= @systemd_user %>
+<% end -%>
+<% if @systemd_group -%>
+Group=<%= @systemd_group %>
+<% end -%>
+
+# Security options
+<% if @systemd_no_new_privileges -%>
+NoNewPrivileges=<%= @systemd_no_new_privileges %>
+<% end -%>
+<% if @systemd_private_tmp -%>
+PrivateTmp=<%= @systemd_private_tmp %>
+<% end -%>
+<% if @systemd_protect_system -%>
+ProtectSystem=<%= @systemd_protect_system %>
+<% end -%>
+<% if @systemd_protect_home -%>
+ProtectHome=<%= @systemd_protect_home %>
+<% end -%>
+<% if @systemd_read_write_paths -%>
+ReadWritePaths=/usr/local/bin/webhook_<%= @name %>/logs <%= @systemd_read_write_paths.join(' ') %>
+<% elsif @systemd_protect_system -%>
+# Always allow writing to webhook logs even with ProtectSystem
+ReadWritePaths=/usr/local/bin/webhook_<%= @name %>/logs
+<% end -%>
+<% if @systemd_read_only_paths -%>
+ReadOnlyPaths=<%= @systemd_read_only_paths.join(' ') %>
+<% end -%>
+<% if @systemd_inaccessible_paths -%>
+InaccessiblePaths=<%= @systemd_inaccessible_paths.join(' ') %>
+<% end -%>
+<% if @systemd_dynamic_user -%>
+DynamicUser=<%= @systemd_dynamic_user %>
+<% end -%>
+<% if @systemd_capability_bounding_set -%>
+CapabilityBoundingSet=<%= @systemd_capability_bounding_set.join(' ') %>
+<% end -%>
+<% if @systemd_private_devices -%>
+PrivateDevices=<%= @systemd_private_devices %>
+<% end -%>
+<% if @systemd_restrict_address_families -%>
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+<% end -%>
+<% if @systemd_restrict_namespaces -%>
+RestrictNamespaces=true
+<% end -%>
+<% if @systemd_lock_personality -%>
+LockPersonality=true
+<% end -%>
+<% if @systemd_protect_kernel_tunables -%>
+ProtectKernelTunables=<%= @systemd_protect_kernel_tunables %>
+<% end -%>
+<% if @systemd_protect_kernel_modules -%>
+ProtectKernelModules=<%= @systemd_protect_kernel_modules %>
+<% end -%>
+<% if @systemd_protect_control_groups -%>
+ProtectControlGroups=<%= @systemd_protect_control_groups %>
+<% end -%>
 
 [Install]
 WantedBy=multi-user.target
