@@ -81,6 +81,48 @@ http::listener { 'secure-webhook':
 }
 ```
 
+### Custom Response Handling
+
+For applications with specific exit code requirements (like Puppet), you can provide custom response handling logic:
+
+```puppet
+$puppet_response_handler = @(RUBY)
+  case exit_status
+  when 0  # No changes needed
+    status 200
+    "Puppet run succeeded - no changes needed"
+  when 2  # Changes applied successfully
+    status 200  
+    "Puppet run succeeded - changes applied"
+  when 4  # Some failures but run completed
+    status 207  # Multi-status
+    "Puppet run completed with some failures"
+  when 6  # Both changes and failures
+    status 207
+    "Puppet run completed with changes and failures"
+  when 1  # Run failed
+    status 500
+    "Puppet run failed"
+  else
+    status 500
+    "Puppet run failed with unexpected exit code: #{exit_status}"
+  end
+  | RUBY
+
+http::listener { 'puppet-webhook':
+  port                    => 6969,
+  custom_response_handler => $puppet_response_handler,
+  routes => {
+    'run_puppet' => {
+      'method'  => 'get',
+      'command' => '/opt/puppetlabs/bin/puppet agent -t'
+    }
+  }
+}
+```
+
+The custom handler receives the `exit_status` variable and should set HTTP status codes using `status <code>` and return a response string.
+
 ## Parameters
 
 ### http::listener Parameters
@@ -94,6 +136,7 @@ http::listener { 'secure-webhook':
 | `key_path` | Optional[Stdlib::Absolutepath] | `undef` | SSL private key path |
 | `rack_env` | Enum['development', 'production', 'test'] | `'production'` | Rack environment |
 | `bind_address` | Stdlib::IP::Address | `'0.0.0.0'` | Address to bind to |
+| `custom_response_handler` | Optional[String] | `undef` | Custom Ruby code for handling command exit codes |
 
 ### Route Definition
 
@@ -112,10 +155,16 @@ routes => {
 
 ## HTTP Response Codes
 
-The webhook listener returns appropriate HTTP status codes based on command execution:
+### Default Generic Behavior
+By default, the webhook listener returns simple HTTP status codes:
 
-### Puppet Agent Integration
-When using `/opt/puppetlabs/bin/puppet agent -t`:
+| Command Exit Code | HTTP Status | Response Message |
+|------------------|-------------|------------------|
+| 0 | 200 OK | "Command succeeded" |
+| Non-zero | 500 Internal Server Error | "Command failed with exit code: X" |
+
+### Custom Response Handlers
+You can override the default behavior by providing a `custom_response_handler` parameter with Ruby code that maps exit codes to specific HTTP responses. This is particularly useful for applications like Puppet that have meaningful exit codes:
 
 | Puppet Exit Code | HTTP Status | Response Message |
 |------------------|-------------|------------------|
@@ -125,9 +174,6 @@ When using `/opt/puppetlabs/bin/puppet agent -t`:
 | 6 | 207 Multi-Status | "Puppet run completed with changes and failures" |
 | 1 | 500 Internal Server Error | "Puppet run failed" |
 | Other | 500 Internal Server Error | "Puppet run failed with unexpected exit code: X" |
-
-### General Command Execution
-For other commands, standard HTTP status codes apply based on exit status.
 
 ## Security Recommendations
 

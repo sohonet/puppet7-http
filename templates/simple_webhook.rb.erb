@@ -69,26 +69,19 @@ class Server < Sinatra::Base
         exit_status = $?.exitstatus
         LOG.info("Command completed with exit status: #{exit_status}")
         
-        case exit_status
-        when 0  # No changes, system already in desired state
+<% if @custom_response_handler -%>
+        # Custom response handler
+        <%= @custom_response_handler %>
+<% else -%>
+        # Default generic response handler
+        if exit_status == 0
           status 200
-          "Puppet run succeeded - no changes needed"
-        when 2  # Changes made successfully  
-          status 200
-          "Puppet run succeeded - changes applied"
-        when 4  # Some resources failed but run completed
-          status 207  # Multi-status (partial success)
-          "Puppet run completed with some failures"
-        when 6  # Both changes and failures
-          status 207  # Multi-status (partial success) 
-          "Puppet run completed with changes and failures"
-        when 1  # Run failed or couldn't start
+          "Command succeeded"
+        else
           status 500
-          "Puppet run failed"
-        else    # Unexpected exit code
-          status 500
-          "Puppet run failed with unexpected exit code: #{exit_status}"
+          "Command failed with exit code: #{exit_status}"
         end
+<% end -%>
         
       rescue => e
         LOG.error("Error executing command: #{e.message}")

@@ -6,6 +6,7 @@ define http::listener (
     Optional[Stdlib::Absolutepath] $key_path            = undef,
     Enum['development', 'production', 'test'] $rack_env = 'production',
     Stdlib::IP::Address $bind_address                   = '0.0.0.0',
+    Optional[String] $custom_response_handler           = undef,
 ) {
     # Parameter validation
     if $ssl_enable and ($cert_path == undef or $key_path == undef) {
