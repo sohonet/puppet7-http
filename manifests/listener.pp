@@ -1,81 +1,81 @@
 define http::listener (
-    Hash $routes                                                            = {},
-    Boolean $ssl_enable                                                     = false,
-    Stdlib::Port $port                                                    = undef,
-    Optional[Stdlib::Absolutepath] $cert_path                               = undef,
-    Optional[Stdlib::Absolutepath] $key_path                                = undef,
-    Enum['development', 'production', 'test'] $rack_env                     = 'production',
-    Stdlib::IP::Address $bind_address                                       = '0.0.0.0',
-    Optional[String] $custom_response_handler                               = undef,
-    # Systemd security options
-    Optional[Variant[Boolean, Enum['full', 'strict']]] $systemd_protect_system = undef,
-    Optional[Boolean] $systemd_protect_home                                 = undef,
-    Optional[Boolean] $systemd_private_tmp                                  = undef,
-    Optional[Boolean] $systemd_no_new_privileges                            = undef,
-    Optional[Array[Stdlib::Absolutepath]] $systemd_read_write_paths         = undef,
-    Optional[Array[Stdlib::Absolutepath]] $systemd_read_only_paths          = undef,
-    Optional[Array[Stdlib::Absolutepath]] $systemd_inaccessible_paths       = undef,
-    Optional[String] $systemd_dynamic_user                                  = undef,
-    Optional[String] $systemd_user                                          = undef,
-    Optional[String] $systemd_group                                         = undef,
-    Optional[Array[String]] $systemd_capability_bounding_set                = undef,
-    Optional[Enum['full', 'strict', 'no']] $systemd_private_devices         = undef,
-    Optional[Boolean] $systemd_restrict_address_families                    = undef,
-    Optional[Boolean] $systemd_restrict_namespaces                          = undef,
-    Optional[Boolean] $systemd_lock_personality                             = undef,
-    Optional[Enum['yes', 'no', 'read-only']] $systemd_protect_kernel_tunables = undef,
-    Optional[Boolean] $systemd_protect_kernel_modules                       = undef,
-    Optional[Boolean] $systemd_protect_control_groups                       = undef,
+  Hash $routes                                                               = {},
+  Boolean $ssl_enable                                                        = false,
+  Stdlib::Port $port                                                         = undef,
+  Optional[Stdlib::Absolutepath] $cert_path                                  = undef,
+  Optional[Stdlib::Absolutepath] $key_path                                   = undef,
+  Enum['development', 'production', 'test'] $rack_env                        = 'production',
+  Stdlib::IP::Address $bind_address                                          = '0.0.0.0',
+  Optional[String] $custom_response_handler                                  = undef,
+  # Systemd security options
+  Optional[Variant[Boolean, Enum['full', 'strict']]] $systemd_protect_system = undef,
+  Optional[Boolean] $systemd_protect_home                                    = undef,
+  Optional[Boolean] $systemd_private_tmp                                     = undef,
+  Optional[Boolean] $systemd_no_new_privileges                               = undef,
+  Optional[Array[Stdlib::Absolutepath]] $systemd_read_write_paths            = undef,
+  Optional[Array[Stdlib::Absolutepath]] $systemd_read_only_paths             = undef,
+  Optional[Array[Stdlib::Absolutepath]] $systemd_inaccessible_paths          = undef,
+  Optional[String] $systemd_dynamic_user                                     = undef,
+  Optional[String] $systemd_user                                             = undef,
+  Optional[String] $systemd_group                                            = undef,
+  Optional[Array[String]] $systemd_capability_bounding_set                   = undef,
+  Optional[Enum['full', 'strict', 'no']] $systemd_private_devices            = undef,
+  Optional[Boolean] $systemd_restrict_address_families                       = undef,
+  Optional[Boolean] $systemd_restrict_namespaces                             = undef,
+  Optional[Boolean] $systemd_lock_personality                                = undef,
+  Optional[Enum['yes', 'no', 'read-only']] $systemd_protect_kernel_tunables  = undef,
+  Optional[Boolean] $systemd_protect_kernel_modules                          = undef,
+  Optional[Boolean] $systemd_protect_control_groups                          = undef,
 ) {
-    # Parameter validation
-    if $ssl_enable and ($cert_path == undef or $key_path == undef) {
-        fail('SSL enabled but cert_path or key_path not provided')
-    }
+  # Parameter validation
+  if $ssl_enable and ($cert_path == undef or $key_path == undef) {
+    fail('SSL enabled but cert_path or key_path not provided')
+  }
 
-    File {
-        mode  => '0750',
-        group => 'root',
-        owner => 'root',
-    }
+  File {
+    mode  => '0750',
+    group => 'root',
+    owner => 'root',
+  }
 
-    file {"/usr/local/bin/webhook_${name}":
-        ensure => directory,
-    }
+  file {"/usr/local/bin/webhook_${name}":
+    ensure => directory,
+  }
 
-    file {"/usr/local/bin/webhook_${name}/lib/":
-        ensure => directory,
-    }
+  file {"/usr/local/bin/webhook_${name}/lib/":
+    ensure => directory,
+  }
 
-    file {"webhook_${name}.rb":
-        path    => "/usr/local/bin/webhook_${name}/lib/webhook_${name}.rb",
-        ensure  => file,
-        content => template('http/simple_webhook.rb.erb'),
-        mode    => '0640',
-        notify  => Service["webhook_${name}"],
-    }
+  file {"webhook_${name}.rb":
+    path    => "/usr/local/bin/webhook_${name}/lib/webhook_${name}.rb",
+    ensure  => file,
+    content => template('http/simple_webhook.rb.erb'),
+    mode    => '0640',
+    notify  => Service["webhook_${name}"],
+  }
 
-    file {"/usr/local/bin/webhook_${name}/logs":
-        ensure => directory,
-    }
+  file {"/usr/local/bin/webhook_${name}/logs":
+    ensure => directory,
+  }
 
-    file {"/usr/local/bin/webhook_${name}/bin":
-        ensure => directory,
-    }
+  file {"/usr/local/bin/webhook_${name}/bin":
+    ensure => directory,
+  }
 
-    file {"/usr/local/bin/webhook_${name}/bin/run":
-        ensure  => file,
-        content => template('http/run.erb'),
-    }
+  file {"/usr/local/bin/webhook_${name}/bin/run":
+    ensure  => file,
+    content => template('http/run.erb'),
+  }
 
-    systemd::unit_file { "webhook_${name}.service":
-      content => template('http/systemd.service.erb'),
-      notify  => Service["webhook_${name}"],
-    }
+  systemd::unit_file { "webhook_${name}.service":
+    content => template('http/systemd.service.erb'),
+    notify  => Service["webhook_${name}"],
+  }
 
-    service {"webhook_${name}":
-        ensure     => running,
-        enable     => true,
-        require    => [Package['sinatra'],File["/usr/local/bin/webhook_${name}/bin/run", "webhook_${name}.rb"]],
-    }
+  service {"webhook_${name}":
+    ensure  => running,
+    enable  => true,
+    require => [Package['sinatra'],File["/usr/local/bin/webhook_${name}/bin/run", "webhook_${name}.rb"]],
+  }
 }
 

@@ -4,11 +4,11 @@ Puppet::Type.newtype(:http) do
   ensurable do
 
       newvalue(:get) do
-          provider.get
+        provider.get
       end
 
       newvalue(:post) do
-          provider.post
+        provider.post
       end
 
   end
