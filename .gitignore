@@ -1,0 +1,25 @@
+# Build artifacts
+pkg/
+*.tar.gz
+
+# Bundle artifacts
+.bundle/
+vendor/
+Gemfile.lock
+
+# Testing artifacts
+spec/fixtures/modules/
+spec/fixtures/.librarian/
+spec/fixtures/.tmp/
+.tmp/
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+.project
+.vscode/
+
+# OS files
+.DS_Store
