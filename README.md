@@ -129,8 +129,8 @@ The custom handler receives the `exit_status` variable and should set HTTP statu
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `routes` | Hash | `{}` | Hash of route definitions (see Routes section) |
 | `port` | Stdlib::Port | **required** | Port to listen on |
+| `routes` | Hash | `{}` | Hash of route definitions (see Routes section) |
 | `ssl_enable` | Boolean | `false` | Enable SSL/TLS |
 | `cert_path` | Optional[Stdlib::Absolutepath] | `undef` | SSL certificate path |
 | `key_path` | Optional[Stdlib::Absolutepath] | `undef` | SSL private key path |
