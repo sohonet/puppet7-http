@@ -1,6 +1,6 @@
 class http {
 
-  package { ['sinatra','rack','webrick']:
+  package { ['sinatra','rack','webrick', 'rackup', 'puma']:
     ensure   => present,
     provider => 'gem',
   }
