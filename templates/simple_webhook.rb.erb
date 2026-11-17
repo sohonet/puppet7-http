@@ -40,7 +40,7 @@ class Server < Sinatra::Base
 <% if @ssl_enable %>
       :SSLEnable => true,
       :SSLCertificate => OpenSSL::X509::Certificate.new(File.open('<%= @cert_path %>').read),
-      :SSLPrivateKey => OpenSSL::PKey::RSA.new(File.open('<%= @key_path %>').read),
+      :SSLPrivateKey => OpenSSL::PKey.read(File.read('<%= @key_path %>')),
       :SSLCertName => [ [ "CN", WEBrick::Utils::getservername ] ]
 <% else %>
       :SSLEnable => false
