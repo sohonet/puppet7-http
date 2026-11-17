@@ -7,6 +7,13 @@ require 'logger'
 require 'json'
 <% if @ssl_enable %>
 require 'openssl'
+
+# Load the leaf certificate and any intermediates from the cert file.
+# OpenSSL::X509::Certificate.new only parses the first PEM block, so split
+# the file and pass the remainder to WEBrick as the extra chain.
+SSL_CERTS = File.read('<%= @cert_path %>')
+              .scan(/-----BEGIN CERTIFICATE-----.+?-----END CERTIFICATE-----/m)
+              .map { |pem| OpenSSL::X509::Certificate.new(pem) }
 <% end %>
 
 # Global vars
@@ -39,9 +46,9 @@ class Server < Sinatra::Base
       :AccessLog => [[File.open(SERVER_LOGFILE, 'a'), WEBrick::AccessLog::COMMON_LOG_FORMAT]],
 <% if @ssl_enable %>
       :SSLEnable => true,
-      :SSLCertificate => OpenSSL::X509::Certificate.new(File.open('<%= @cert_path %>').read),
-      :SSLPrivateKey => OpenSSL::PKey.read(File.read('<%= @key_path %>')),
-      :SSLCertName => [ [ "CN", WEBrick::Utils::getservername ] ]
+      :SSLCertificate => SSL_CERTS.first,
+      :SSLExtraChainCert => SSL_CERTS.drop(1),
+      :SSLPrivateKey => OpenSSL::PKey.read(File.read('<%= @key_path %>'))
 <% else %>
       :SSLEnable => false
 <% end %>
